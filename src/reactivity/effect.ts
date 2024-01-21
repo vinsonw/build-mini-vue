@@ -8,7 +8,7 @@ class ReactiveEffect {
     // during execution of this._fn(),
     // get() of proxy in _fn would be triggered,
     // during which track(target, key) is called, then activeEffect is collected
-    this._fn()
+    return this._fn()
   }
 }
 
@@ -42,4 +42,6 @@ let activeEffect
 export function effect(fn) {
   const _effect = new ReactiveEffect(fn)
   _effect.run()
+
+  return _effect.run.bind(_effect)
 }
