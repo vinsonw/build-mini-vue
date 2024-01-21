@@ -4,15 +4,21 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "prepare": "husky install"
   },
   "devDependencies": {
     "@babel/core": "^7.15.5",
     "@babel/preset-env": "^7.15.4",
     "@babel/preset-typescript": "^7.15.0",
+    "@commitlint/cli": "^18.4.4",
+    "@commitlint/config-conventional": "^18.4.4",
     "@types/jest": "^27.0.1",
     "babel-jest": "^27.1.0",
+    "husky": "^8.0.3",
     "jest": "^27.1.0",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.2.4",
     "typescript": "^4.4.2"
   }
 }
