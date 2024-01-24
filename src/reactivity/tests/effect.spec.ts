@@ -75,6 +75,8 @@ describe("effect", () => {
 
     runner()
     expect(dummy).toBe(3)
+    obj.prop++
+    expect(dummy).toBe(3)
   })
 
   it("onStop", () => {
