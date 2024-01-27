@@ -1,4 +1,4 @@
-import { isReactive, isReadonly, readonly } from "../reactive"
+import { isProxy, isReactive, isReadonly, readonly } from "../reactive"
 
 describe("readonly", () => {
   it("happy path", () => {
@@ -10,6 +10,8 @@ describe("readonly", () => {
     expect(isReadonly(wrapped)).toBe(true)
     // `wrapped` could not be reactive and readonly at the same time
     expect(isReactive(wrapped)).toBe(false)
+
+    expect(isProxy(wrapped)).toBe(true)
   })
 
   it("should warn when calling set", () => {
