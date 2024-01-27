@@ -11,4 +11,19 @@ describe("reactive", () => {
     expect(isReactive(observed)).toBe(true)
     expect(isReadonly(observed)).toBe(false)
   })
+
+  it("should be nested reactive by default", () => {
+    const original = {
+      nested: {
+        foo: 1,
+      },
+      array: [{ bar: 2 }],
+    }
+
+    const observed = reactive(original)
+    expect(isReactive(observed.nested)).toBe(true)
+    expect(isReactive(observed.array)).toBe(true)
+    expect(isReadonly(observed.nested)).toBe(false)
+    expect(isReadonly(observed.array)).toBe(false)
+  })
 })

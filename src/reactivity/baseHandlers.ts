@@ -1,5 +1,6 @@
+import { isObject } from "../shared"
 import { track, trigger } from "./effect"
-import { ReactiveFlag } from "./reactive"
+import { ReactiveFlag, reactive, readonly } from "./reactive"
 
 function createGetter(isReadonly = false) {
   return function get(target, key) {
@@ -10,6 +11,12 @@ function createGetter(isReadonly = false) {
     }
 
     const res = Reflect.get(target, key)
+
+    // support nested readonly() and reactive()
+    if (isObject(res)) {
+      return isReadonly ? readonly(res) : reactive(res)
+    }
+
     // collect dep
     if (!isReadonly) {
       track(target, key)
