@@ -1,5 +1,5 @@
 import { effect } from "../effect"
-import { ref, isRef, unRef, proxyRefs } from "../ref"
+import { ref, isRef, unref, proxyRefs } from "../ref"
 
 describe("ref", () => {
   it("happy path", () => {
@@ -54,17 +54,17 @@ describe("ref", () => {
     expect(isRef(bar)).toBe(false)
   })
 
-  it("unRef", () => {
+  it("unref", () => {
     const foo = 1
     const fooRef = ref(foo)
-    expect(isRef(unRef(fooRef))).toBe(false)
-    expect(unRef(foo)).toBe(1)
+    expect(isRef(unref(fooRef))).toBe(false)
+    expect(unref(foo)).toBe(1)
 
     const bar = { baz: 1 }
     const barRef = ref(bar)
 
-    expect(isRef(unRef(barRef))).toBe(false)
-    expect(unRef(bar)).toBe(bar)
+    expect(isRef(unref(barRef))).toBe(false)
+    expect(unref(bar)).toBe(bar)
   })
 
   it("proxyRefs", () => {

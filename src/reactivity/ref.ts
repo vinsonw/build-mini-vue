@@ -48,7 +48,7 @@ export function isRef(maybeRef: any) {
   return !!maybeRef.__v_isRef
 }
 
-export function unRef(maybeRef: any) {
+export function unref(maybeRef: any) {
   if (!isRef(maybeRef)) return maybeRef
 
   return maybeRef.value
@@ -57,7 +57,7 @@ export function unRef(maybeRef: any) {
 export function proxyRefs(objectWithRefs) {
   return new Proxy(objectWithRefs, {
     get(target, key) {
-      return unRef(Reflect.get(target, key))
+      return unref(Reflect.get(target, key))
     },
 
     set(target, key, value) {
