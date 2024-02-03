@@ -65,7 +65,7 @@ export function proxyRefs(objectWithRefs) {
       if (isRef(target[key]) && !isRef(value)) {
         return (target[key].value = value)
       } else {
-        // 2. otherwise, odl value is replaced by new value, including old ref is replaced by new ref since `ref` cannot be nested
+        // 2. otherwise, old value is replaced by new value, including old ref being replaced by new ref since `ref` cannot be nested
         return Reflect.set(target, key, value)
       }
     },
