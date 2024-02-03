@@ -5,6 +5,7 @@ class RefImpl {
   private _value: any
   public dep: Set<unknown>
   private _rawValue: any
+  public __v_isRef = true
   constructor(value) {
     this._rawValue = value
     this._value = convert(value)
@@ -26,8 +27,19 @@ export function convert(value) {
   return isObject(value) ? reactive(value) : value
 }
 
-export function ref(raw: any): any {
-  return new RefImpl(raw)
+export function ref(value: any): any {
+  return new RefImpl(value)
+}
+
+export function isRef(maybeRef: any) {
+  if (!isObject(maybeRef)) return false
+  return !!maybeRef.__v_isRef
+}
+
+export function unRef(maybeRef: any) {
+  if (!isRef(maybeRef)) return maybeRef
+
+  return maybeRef.value
 }
 
 export function trackRefValue(refObj) {
