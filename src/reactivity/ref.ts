@@ -23,6 +23,18 @@ class RefImpl {
   }
 }
 
+export function trackRefValue(refObj) {
+  if (isTracking()) {
+    trackEffects(refObj.dep)
+  } else {
+    // does nothing
+    // for example:
+    // one not tracking scenario:
+    // expect(refObj.value).toBe(1)
+    // -------^^^^^^^^^^^^
+  }
+}
+
 export function convert(value) {
   return isObject(value) ? reactive(value) : value
 }
@@ -42,14 +54,20 @@ export function unRef(maybeRef: any) {
   return maybeRef.value
 }
 
-export function trackRefValue(refObj) {
-  if (isTracking()) {
-    trackEffects(refObj.dep)
-  } else {
-    // does nothing
-    // for example:
-    // one not tracking scenario:
-    // expect(refObj.value).toBe(1)
-    // -------^^^^^^^^^^^^
-  }
+export function proxyRefs(objectWithRefs) {
+  return new Proxy(objectWithRefs, {
+    get(target, key) {
+      return unRef(Reflect.get(target, key))
+    },
+
+    set(target, key, value) {
+      // 1. only under this criterion, `.value` is set
+      if (isRef(target[key]) && !isRef(value)) {
+        return (target[key].value = value)
+      } else {
+        // 2. otherwise, odl value is replaced by new value, including old ref is replaced by new ref since `ref` cannot be nested
+        return Reflect.set(target, key, value)
+      }
+    },
+  })
 }
