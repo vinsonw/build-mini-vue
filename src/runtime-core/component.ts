@@ -42,7 +42,7 @@ function finishComponentSetup(instance: any) {
 }
 
 export function setupRenderEffect(instance, container) {
-  // vnode
+  // so-called subTree is just root vnode of a component
   const subTree = instance.render()
 
   // vnode -> patch
