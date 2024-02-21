@@ -1,11 +1,12 @@
 import { patch } from "./renderer"
 
 export function createComponentInstance(vnode) {
-  const component = {
+  const instance = {
     type: vnode.type,
     vnode,
+    setupState: {},
   }
-  return component
+  return instance
 }
 
 export function setupComponent(instance) {
@@ -17,6 +18,20 @@ export function setupComponent(instance) {
 }
 function setupStatefulComponent(instance) {
   const Component = instance.type
+
+  instance.proxy = new Proxy(
+    {},
+    {
+      get(target, key) {
+        // if getting stuff from setupState
+        const { setupState } = instance
+        if (key in setupState) {
+          return setupState[key]
+        }
+      },
+    },
+  )
+
   const { setup } = Component
 
   if (setup) {
@@ -39,13 +54,4 @@ function finishComponentSetup(instance: any) {
   if (Component.render) {
     instance.render = Component.render
   }
-}
-
-export function setupRenderEffect(instance, container) {
-  // so-called subTree is just root vnode of a component
-  const subTree = instance.render()
-
-  // vnode -> patch
-  // vnode -> element -> mountElement
-  patch(subTree, container)
 }

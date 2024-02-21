@@ -25,21 +25,21 @@ export const App = {
         id: "root",
         class: ["mini", "vue"],
       },
-      // "hello, " + this.msg,
+      "hello, " + this.msg,
       // "hello, " + "mini-vue",
-      [
-        h("p", { class: "child-p-1" }, "as child 1"),
-        h("p", { class: "child-p-2" }, "as child 2"),
-        // TODO not working for nested component
-        // h(Another),
-      ],
+      // [
+      //   h("p", { class: "child-p-1" }, "as child 1"),
+      //   h("p", { class: "child-p-2" }, "as child 2"),
+      // TODO not working for nested component
+      // h(Another),
+      // ],
     )
   },
 
   setup() {
     // composition api
     return {
-      msg: "hello",
+      msg: "vinson",
     }
   },
 }

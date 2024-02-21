@@ -1,8 +1,4 @@
-import {
-  createComponentInstance,
-  setupComponent,
-  setupRenderEffect,
-} from "./component"
+import { createComponentInstance, setupComponent } from "./component"
 import { isObject } from "../shared"
 
 export function render(vnode, rootContainer) {
@@ -26,6 +22,16 @@ function mountComponent(vnode: any, container: any) {
   const instance = createComponentInstance(vnode)
   setupComponent(instance)
   setupRenderEffect(instance, container)
+}
+
+function setupRenderEffect(instance, container) {
+  const { proxy } = instance
+  // so-called subTree is just root vnode of a component
+  const subTree = instance.render.call(proxy)
+
+  // vnode -> patch
+  // vnode -> element -> mountElement
+  patch(subTree, container)
 }
 
 function processElement(vnode: any, container: any) {
