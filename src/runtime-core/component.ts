@@ -1,4 +1,4 @@
-import { patch } from "./renderer"
+import { PublicInstanceProxyHandlers } from "./componentPublicInstance"
 
 export function createComponentInstance(vnode) {
   const instance = {
@@ -19,17 +19,10 @@ export function setupComponent(instance) {
 function setupStatefulComponent(instance) {
   const Component = instance.type
 
+  // prepare `this` binding for render()
   instance.proxy = new Proxy(
-    {},
-    {
-      get(target, key) {
-        // if getting stuff from setupState
-        const { setupState } = instance
-        if (key in setupState) {
-          return setupState[key]
-        }
-      },
-    },
+    { _: instance /* for PublicInstanceProxyHandlers to access instance  */ },
+    PublicInstanceProxyHandlers,
   )
 
   const { setup } = Component

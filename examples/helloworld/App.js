@@ -19,6 +19,7 @@ export const App = {
 
   render() {
     // ui
+    window.self = this
     return h(
       "div",
       {

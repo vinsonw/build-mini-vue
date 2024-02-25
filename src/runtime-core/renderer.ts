@@ -18,13 +18,13 @@ function processComponent(vnode: any, container: any) {
   mountComponent(vnode, container)
 }
 
-function mountComponent(vnode: any, container: any) {
-  const instance = createComponentInstance(vnode)
+function mountComponent(initialVnode: any, container: any) {
+  const instance = createComponentInstance(initialVnode)
   setupComponent(instance)
-  setupRenderEffect(instance, container)
+  setupRenderEffect(instance, initialVnode, container)
 }
 
-function setupRenderEffect(instance, container) {
+function setupRenderEffect(instance, initialVnode, container) {
   const { proxy } = instance
   // so-called subTree is just root vnode of a component
   const subTree = instance.render.call(proxy)
@@ -32,6 +32,9 @@ function setupRenderEffect(instance, container) {
   // vnode -> patch
   // vnode -> element -> mountElement
   patch(subTree, container)
+
+  // root dom node of a component is the root component of subtree
+  initialVnode.el = subTree.el
 }
 
 function processElement(vnode: any, container: any) {
@@ -41,7 +44,7 @@ function processElement(vnode: any, container: any) {
 
 function mountElement(vnode: any, container: any) {
   const { children, props } = vnode
-  const el = document.createElement(vnode.type) as HTMLElement
+  const el = (vnode.el = document.createElement(vnode.type) as HTMLElement)
 
   if (typeof children === "string") {
     el.textContent = children
