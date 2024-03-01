@@ -1,3 +1,4 @@
+import { isObject } from "../shared"
 import {
   mutableHandlers,
   readonlyHandlers,
@@ -21,8 +22,12 @@ export function shallowReadonly(raw) {
   return createReactiveObject(raw, shallowReadonlyHandlers)
 }
 
-function createReactiveObject(raw: any, baseHandlers) {
-  return new Proxy(raw, baseHandlers)
+function createReactiveObject(target: any, baseHandlers) {
+  if (!isObject(target)) {
+    console.warn(`${target} must be an object`)
+    return target
+  }
+  return new Proxy(target, baseHandlers)
 }
 
 export function isReactive(value) {

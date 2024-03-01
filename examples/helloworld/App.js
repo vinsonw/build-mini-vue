@@ -1,22 +1,21 @@
 import { h } from "../../lib/mini-vue.esm.js"
 
-const Another = {
-  render() {
-    return h(
-      "div",
-      { class: "another" },
-      h("p", { class: "another-child" }, "p in another component"),
-    )
+const Foo = {
+  setup(props) {
+    // props.count exists
+    console.log("Foo props:", props)
+    // should emit a warning about props being readonly
+    // props.count++
   },
 
-  setup() {
-    return ""
+  render() {
+    return h("div", {}, "foo: " + this.count)
   },
 }
 
 export const App = {
   // no support for .vue yet
-
+  name: "App",
   render() {
     // ui
     window.self = this
@@ -32,7 +31,8 @@ export const App = {
           console.log("mouse entered!")
         },
       },
-      "hello, " + this.msg,
+      [h("div", {}, "hi, " + this.msg), h(Foo, { count: 1 })],
+      // "hello, " + this.msg,
       // "hello, " + "mini-vue",
       // [
       //   h("p", { class: "child-p-1" }, "as child 1"),
