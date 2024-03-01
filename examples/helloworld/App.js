@@ -25,6 +25,12 @@ export const App = {
       {
         id: "root",
         class: ["mini", "vue"],
+        onClick() {
+          console.log("clicked!")
+        },
+        onMouseenter() {
+          console.log("mouse entered!")
+        },
       },
       "hello, " + this.msg,
       // "hello, " + "mini-vue",
