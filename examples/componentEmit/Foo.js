@@ -23,7 +23,7 @@ export const Foo = {
       },
       "emitAdd",
     )
-    const foo = h("p", {}, "foo")
-    return h("div", {}, [foo, btn])
+    const foo = h("span", {}, "foo")
+    return h("div", { class: "foo-component-root" }, [foo, btn])
   },
 }
