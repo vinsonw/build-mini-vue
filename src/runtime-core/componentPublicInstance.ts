@@ -3,6 +3,7 @@ import { hasOwn } from "../shared"
 const publicPropertiesMap = {
   // support this.$el in options api
   $el: (instance) => instance.vnode.el,
+  $slots: (instance) => instance.slots,
 }
 
 export const PublicInstanceProxyHandlers = {

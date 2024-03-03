@@ -13,6 +13,8 @@ export function createVNode(type, props?, children?) {
     vnode.shapeFlag = vnode.shapeFlag | ShapeFlags.TEXT_CHILDREN
   } else if (Array.isArray(children)) {
     vnode.shapeFlag = vnode.shapeFlag | ShapeFlags.ARRAY_CHILDREN
+  } else {
+    console.log("!children not processed for type:", type)
   }
 
   return vnode
