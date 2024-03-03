@@ -1,10 +1,21 @@
+import { ShapeFlags } from "../shared/ShapeFlags"
+
 export function initSlots(instance, children) {
   // at the moment, children other than ShapeFlags.TEXT_CHILDREN and ShapeFlags.ARRAY_CHILDREN is
   // not processed in createVNode
-  // instance.slots = children
-  instance.slots = normalizeSlot(children)
+  const { vnode } = instance
+  if (vnode.shapeFlag & ShapeFlags.SLOT_CHILDREN) {
+    normalizeObjectSlots(children, instance.slots)
+  }
 }
 
-function normalizeSlot(children) {
-  return Array.isArray(children) ? children : [children]
+function normalizeObjectSlots(children, slots) {
+  for (const key in children) {
+    const value = children[key]
+    slots[key] = (props) => normalizeSlotValue(value(props))
+  }
+}
+
+function normalizeSlotValue(value) {
+  return Array.isArray(value) ? value : [value]
 }

@@ -5,10 +5,15 @@ export const App = {
   // no support for .vue yet
   name: "App",
   render() {
-    const foo = h(Foo, {}, [
-      h("p", {}, "slotted content1"),
-      h("p", {}, "slotted content2"),
-    ])
+    const foo = h(
+      Foo,
+      {},
+      {
+        header: ({ headerInfo }) =>
+          h("p", {}, "slotted content1 " + headerInfo),
+        footer: () => h("p", {}, "slotted content2"),
+      },
+    )
     return h("div", { class: "app-component-root" }, [foo])
   },
 

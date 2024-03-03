@@ -13,8 +13,15 @@ export function createVNode(type, props?, children?) {
     vnode.shapeFlag = vnode.shapeFlag | ShapeFlags.TEXT_CHILDREN
   } else if (Array.isArray(children)) {
     vnode.shapeFlag = vnode.shapeFlag | ShapeFlags.ARRAY_CHILDREN
-  } else {
-    console.log("!children not processed for type:", type)
+  }
+
+  // process slots
+  // 1. vnode is of component
+  if (vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+    // 2.children of the vnode is type of object, eg `{default: () => xx, header: () => xx}`
+    if (typeof children === "object") {
+      vnode.shapeFlag = vnode.shapeFlag | ShapeFlags.SLOT_CHILDREN
+    }
   }
 
   return vnode
