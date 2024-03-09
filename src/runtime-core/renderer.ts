@@ -1,5 +1,6 @@
 import { createComponentInstance, setupComponent } from "./component"
 import { ShapeFlags } from "../shared/ShapeFlags"
+import { Fragment, Text } from "./vnode"
 
 export function render(vnode, rootContainer) {
   // patch
@@ -7,15 +8,39 @@ export function render(vnode, rootContainer) {
 }
 
 export function patch(vnode, container) {
-  const { shapeFlag } = vnode
-  if (shapeFlag & ShapeFlags.ELEMENT) {
-    processElement(vnode, container)
-  } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-    processComponent(vnode, container)
-  } else {
-    console.warn("not patching vnode", vnode)
+  const { shapeFlag, type } = vnode
+  // Fragment -> only render its children
+  switch (type) {
+    case Fragment:
+      processFragment(vnode, container)
+      break
+    case Text:
+      processText(vnode, container)
+      break
+    default:
+      if (shapeFlag & ShapeFlags.ELEMENT) {
+        processElement(vnode, container)
+      } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+        processComponent(vnode, container)
+      } else {
+        console.warn("not patching vnode", vnode)
+      }
+
+      break
   }
 }
+
+function processFragment(vnode, container) {
+  // reuse mountChildren
+  mountChildren(vnode.children, container)
+}
+
+function processText(vnode, container) {
+  const { children } = vnode
+  const textNode = (vnode.el = document.createTextNode(children))
+  container.append(textNode)
+}
+
 function processComponent(vnode: any, container: any) {
   mountComponent(vnode, container)
 }

@@ -1,4 +1,4 @@
-import { h } from "../../lib/mini-vue.esm.js"
+import { h, createTextVNode } from "../../lib/mini-vue.esm.js"
 import { Foo } from "./Foo.js"
 
 export const App = {
@@ -14,7 +14,10 @@ export const App = {
         footer: () => h("p", {}, "slotted content2"),
       },
     )
-    return h("div", { class: "app-component-root" }, [foo])
+    return h("div", { class: "app-component-root" }, [
+      foo,
+      createTextVNode("你好呀"),
+    ])
   },
 
   setup() {
