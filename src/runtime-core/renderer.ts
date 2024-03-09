@@ -12,6 +12,8 @@ export function patch(vnode, container) {
     processElement(vnode, container)
   } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
     processComponent(vnode, container)
+  } else {
+    console.warn("not patching vnode", vnode)
   }
 }
 function processComponent(vnode: any, container: any) {
