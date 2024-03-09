@@ -35,12 +35,21 @@ function setupStatefulComponent(instance) {
   const { setup } = Component
 
   if (setup) {
-    console.log("instance", instance)
+    setCurrentInstance(instance)
     const setupResult = setup(shallowReadonly(instance.props), {
       emit: instance.emit,
     })
+    setCurrentInstance(null)
     handleSetupResult(instance, setupResult)
   }
+}
+
+let currentInstance: any = null
+export function getCurrentInstance() {
+  return currentInstance
+}
+function setCurrentInstance(value) {
+  currentInstance = value
 }
 
 function handleSetupResult(instance, setupResult: any) {
