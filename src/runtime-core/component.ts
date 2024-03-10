@@ -4,7 +4,7 @@ import { initProps } from "./componentProps"
 import { initSlots } from "./componentSlots"
 import { PublicInstanceProxyHandlers } from "./componentPublicInstance"
 
-export function createComponentInstance(vnode) {
+export function createComponentInstance(vnode, parent) {
   const instance = {
     type: vnode.type,
     vnode,
@@ -12,6 +12,8 @@ export function createComponentInstance(vnode) {
     props: {},
     slots: {},
     emit: () => {},
+    provides: parent ? parent.provides : {},
+    parent,
   }
   instance.emit = emit.bind(null, instance) as any
   return instance
