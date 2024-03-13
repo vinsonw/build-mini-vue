@@ -7,7 +7,7 @@ export function render(vnode, rootContainer) {
   patch(vnode, rootContainer, null)
 }
 
-export function patch(vnode, container, parentComponent) {
+export function patch(vnode, container: HTMLElement, parentComponent) {
   const { shapeFlag, type } = vnode
   // Fragment -> only render its children
   switch (type) {
@@ -41,17 +41,25 @@ function processText(vnode, container) {
   container.append(textNode)
 }
 
-function processComponent(vnode: any, container: any, parentComponent) {
+function processComponent(
+  vnode: any,
+  container: HTMLElement,
+  parentComponent: HTMLElement,
+) {
   mountComponent(vnode, container, parentComponent)
 }
 
-function mountComponent(initialVnode: any, container: any, parentComponent) {
+function mountComponent(
+  initialVnode: any,
+  container: HTMLElement,
+  parentComponent: HTMLElement,
+) {
   const instance = createComponentInstance(initialVnode, parentComponent)
   setupComponent(instance)
   setupRenderEffect(instance, initialVnode, container)
 }
 
-function setupRenderEffect(instance, initialVnode, container) {
+function setupRenderEffect(instance, initialVnode, container: HTMLElement) {
   const { proxy } = instance
   // so-called subTree is just root vnode of a component
   const subTree = instance.render.call(proxy)
@@ -64,12 +72,20 @@ function setupRenderEffect(instance, initialVnode, container) {
   initialVnode.el = subTree.el
 }
 
-function processElement(vnode: any, container: any, parentComponent) {
+function processElement(
+  vnode: any,
+  container: HTMLElement,
+  parentComponent: HTMLElement,
+) {
   // implement
   mountElement(vnode, container, parentComponent)
 }
 
-function mountElement(vnode: any, container: any, parentComponent) {
+function mountElement(
+  vnode: any,
+  container: HTMLElement,
+  parentComponent: HTMLElement,
+) {
   const { children, props, shapeFlag } = vnode
   const el = (vnode.el = document.createElement(vnode.type) as HTMLElement)
 
