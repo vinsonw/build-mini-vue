@@ -14,5 +14,5 @@ export default {
       file: pkg.module,
     },
   ],
-  plugins: [typescript()],
+  plugins: [typescript({ tsconfig: "./tsconfig.json" })],
 }
