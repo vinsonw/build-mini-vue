@@ -3,7 +3,11 @@ import { ShapeFlags } from "../shared/ShapeFlags"
 import { Fragment, Text } from "./vnode"
 import { createAppAPI } from "./createApp"
 
-export function createRenderer(options) {
+export function createRenderer(options: {
+  createElement: (type: string) => any
+  patchProp: (el: any, key: any, val: any) => any
+  insert: (el: any, parent: any) => any
+}) {
   const {
     createElement: hostCreateElement,
     patchProp: hostPatchProp,
