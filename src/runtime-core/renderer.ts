@@ -2,6 +2,7 @@ import { createComponentInstance, setupComponent } from "./component"
 import { ShapeFlags } from "../shared/ShapeFlags"
 import { Fragment, Text } from "./vnode"
 import { createAppAPI } from "./createApp"
+import { effect } from "src/reactivity/effect"
 
 export function createRenderer(options: {
   createElement: (type: string) => any
@@ -71,16 +72,20 @@ export function createRenderer(options: {
   }
 
   function setupRenderEffect(instance, initialVnode, container: HTMLElement) {
-    const { proxy } = instance
-    // so-called subTree is just root vnode of a component
-    const subTree = instance.render.call(proxy)
+    effect(() => {
+      const { proxy } = instance
+      // so-called subTree is just root vnode of a component
+      const subTree = instance.render.call(proxy)
 
-    // vnode -> patch
-    // vnode -> element -> mountElement
-    patch(subTree, container, instance)
+      console.log(subTree)
 
-    // root dom node of a component is the root component of subtree
-    initialVnode.el = subTree.el
+      // vnode -> patch
+      // vnode -> element -> mountElement
+      patch(subTree, container, instance)
+
+      // root dom node of a component is the root component of subtree
+      initialVnode.el = subTree.el
+    })
   }
 
   function processElement(

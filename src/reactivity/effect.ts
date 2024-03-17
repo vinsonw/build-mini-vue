@@ -80,7 +80,7 @@ export function trigger(target, key) {
   triggerEffects(dep)
 }
 
-export function triggerEffects(dep) {
+export function triggerEffects(dep: Set<any>) {
   for (const effect of dep) {
     if (effect.scheduler) {
       effect.scheduler()
