@@ -15,6 +15,10 @@ export function createComponentInstance(vnode, parent) {
     emit: () => {},
     provides: parent ? parent.provides : {},
     parent,
+
+    // to distinguish between mount and update
+    isMounted: false,
+    subTree: {},
   }
   instance.emit = emit.bind(null, instance) as any
   return instance
