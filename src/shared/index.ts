@@ -18,3 +18,5 @@ export const camelize = (str: string) =>
   str.replace(/-(\w)/g, (_, c: string) => {
     return c ? c.toUpperCase() : ""
   })
+
+export const EMPTY_OBJ = {}

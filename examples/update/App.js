@@ -9,7 +9,7 @@ export const App = {
 
     const onClick = () => {
       console.log("onClick")
-      count.value += 1
+      count.value++
       console.log("count", count.value)
     }
     return {
@@ -24,7 +24,7 @@ export const App = {
     return h(
       "div",
       {
-        id: "root",
+        id: this.count,
       },
       [
         h("div", {}, "count" + this.count),

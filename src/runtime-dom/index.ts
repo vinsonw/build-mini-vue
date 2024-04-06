@@ -5,14 +5,19 @@ function createElement(el) {
   return document.createElement(el)
 }
 
-function patchProp(el, key, val) {
+function patchProp(el, key, prevVal, newVal) {
   console.log("---patchProp")
   const isOn = (key: string) => /^on[A-Z]/.test(key)
   if (isOn(key)) {
     const event = key.slice(2).toLowerCase()
-    el.addEventListener(event, val)
+    el.removeEventListener(event, prevVal)
+    el.addEventListener(event, newVal)
   } else {
-    el.setAttribute(key, val)
+    if (newVal === undefined || newVal === null) {
+      el.removeAttribute(key)
+    } else {
+      el.setAttribute(key, newVal)
+    }
   }
 }
 

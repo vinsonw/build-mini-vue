@@ -3,10 +3,11 @@ import { ShapeFlags } from "../shared/ShapeFlags"
 import { Fragment, Text } from "./vnode"
 import { createAppAPI } from "./createApp"
 import { effect } from "src/reactivity/effect"
+import { EMPTY_OBJ } from "src/shared"
 
 export function createRenderer(options: {
   createElement: (type: string) => any
-  patchProp: (el: any, key: any, val: any) => any
+  patchProp: (el: any, key: any, prevVal: any, nextVal: any) => any
   insert: (el: any, parent: any) => any
 }) {
   const {
@@ -15,6 +16,7 @@ export function createRenderer(options: {
     insert: hostInsert,
   } = options
   function render(vnode, rootContainer) {
+    // debugger
     // patch
     patch(null, vnode, rootContainer, null)
   }
@@ -22,6 +24,7 @@ export function createRenderer(options: {
   // n1: old vnode
   // n2: new vnode
   function patch(n1, n2, container: HTMLElement, parentComponent) {
+    // debugger
     const { shapeFlag, type } = n2
     // Fragment -> only render its children
     switch (type) {
@@ -81,6 +84,8 @@ export function createRenderer(options: {
         // so-called subTree is just root vnode of a component
         const subTree = (instance.subTree = instance.render.call(proxy))
 
+        console.log("subTree", subTree)
+
         // vnode -> patch
         // vnode -> element -> mountElement
         patch(null, subTree, container, instance)
@@ -117,7 +122,39 @@ export function createRenderer(options: {
 
   function patchElement(n1, n2, container) {
     console.log("patchElement n1, n2", { n1, n2 })
-    // TODO impl patch element
+
+    // patch props
+    const oldProps = n1.props || EMPTY_OBJ
+    const newProps = n2.props || EMPTY_OBJ
+
+    const el = (n2.el = n1.el) // n2 may have no el since el is attached in mountElement
+
+    patchProps(el, oldProps, newProps)
+  }
+
+  function patchProps(el, oldProps, newProps) {
+    if (oldProps === newProps) return
+
+    // update props that exist in newProps
+    // but have a different value in oldProps
+    // or does not exist in oldProps
+    for (const key in newProps) {
+      const prevProp = oldProps[key]
+      const newProp = newProps[key]
+
+      if (prevProp !== newProp) {
+        hostPatchProp(el, key, prevProp, newProp)
+      }
+    }
+
+    if (oldProps === EMPTY_OBJ) return
+
+    // delete props only in oldProps and not in newProps
+    for (const key in oldProps) {
+      if (!(key in newProps)) {
+        hostPatchProp(el, key, oldProps[key], null)
+      }
+    }
   }
 
   function mountElement(
@@ -137,7 +174,7 @@ export function createRenderer(options: {
 
     for (const key in props) {
       const val = props[key]
-      hostPatchProp(el, key, val)
+      hostPatchProp(el, key, null, val)
     }
 
     hostInsert(el, container)
