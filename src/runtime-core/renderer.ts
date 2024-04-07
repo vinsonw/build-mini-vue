@@ -8,7 +8,7 @@ import { EMPTY_OBJ } from "src/shared"
 export function createRenderer(options: {
   createElement: (type: string) => any
   patchProp: (el: any, key: any, prevVal: any, nextVal: any) => any
-  insert: (el: any, parent: any) => any
+  insert: (el: any, parent: any, anchor: any) => any
   remove: (el: any) => any
   setElementText: (container: any, text: any) => any
 }) {
@@ -22,27 +22,28 @@ export function createRenderer(options: {
   function render(vnode, rootContainer) {
     // debugger
     // patch
-    patch(null, vnode, rootContainer, null)
+    patch(null, vnode, rootContainer, null, null)
   }
 
   // n1: old vnode
   // n2: new vnode
-  function patch(n1, n2, container: HTMLElement, parentComponent) {
+  function patch(n1, n2, container: HTMLElement, parentComponent, anchor) {
     // debugger
     const { shapeFlag, type } = n2
     // Fragment -> only render its children
     switch (type) {
       case Fragment:
-        processFragment(n1, n2, container, parentComponent)
+        processFragment(n1, n2, container, parentComponent, anchor)
         break
       case Text:
         processText(n1, n2, container)
         break
       default:
         if (shapeFlag & ShapeFlags.ELEMENT) {
-          processElement(n1, n2, container, parentComponent)
+          // console.log("processElement anchor", anchor)
+          processElement(n1, n2, container, parentComponent, anchor)
         } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-          processComponent(n1, n2, container, parentComponent)
+          processComponent(n1, n2, container, parentComponent, anchor)
         } else {
           console.warn("not patching vnode", n2)
         }
@@ -51,14 +52,15 @@ export function createRenderer(options: {
     }
   }
 
-  function processFragment(n1, n2, container, parentComponent) {
+  function processFragment(n1, n2, container, parentComponent, anchor) {
     // reuse mountChildren
-    mountChildren(n2.children, container, parentComponent)
+    mountChildren(n2.children, container, parentComponent, anchor)
   }
 
   function processText(n1, n2, container) {
     const { children } = n2
     const textNode = (n2.el = document.createTextNode(children))
+    console.log("text el", textNode)
     container.append(textNode)
   }
 
@@ -67,32 +69,40 @@ export function createRenderer(options: {
     n2: any,
     container: HTMLElement,
     parentComponent: HTMLElement,
+    anchor,
   ) {
-    mountComponent(n2, container, parentComponent)
+    mountComponent(n2, container, parentComponent, anchor)
   }
 
   function mountComponent(
     initialVnode: any,
     container: HTMLElement,
     parentComponent: HTMLElement,
+    anchor,
   ) {
     const instance = createComponentInstance(initialVnode, parentComponent)
     setupComponent(instance)
-    setupRenderEffect(instance, initialVnode, container)
+    setupRenderEffect(instance, initialVnode, container, anchor)
   }
 
-  function setupRenderEffect(instance, initialVnode, container: HTMLElement) {
+  function setupRenderEffect(
+    instance,
+    initialVnode,
+    container: HTMLElement,
+    anchor,
+  ) {
     effect(() => {
       if (!instance.isMounted) {
         const { proxy } = instance
         // so-called subTree is just root vnode of a component
         const subTree = (instance.subTree = instance.render.call(proxy))
 
+        // console.log("subTree", JSON.stringify(subTree))
         console.log("subTree", subTree)
 
         // vnode -> patch
         // vnode -> element -> mountElement
-        patch(null, subTree, container, instance)
+        patch(null, subTree, container, instance, anchor)
 
         // root dom node of a component is the root dom of subtree
         initialVnode.el = subTree.el
@@ -105,7 +115,7 @@ export function createRenderer(options: {
         const prevSubtree = instance.subTree
         const subTree = instance.render.call(proxy)
         instance.subTree = subTree
-        patch(prevSubtree, subTree, container, instance)
+        patch(prevSubtree, subTree, container, instance, anchor)
       }
     })
   }
@@ -115,16 +125,17 @@ export function createRenderer(options: {
     n2: any,
     container: HTMLElement,
     parentComponent: HTMLElement,
+    anchor,
   ) {
     // implement
     if (!n1) {
-      mountElement(n2, container, parentComponent)
+      mountElement(n2, container, parentComponent, anchor)
     } else {
-      patchElement(n1, n2, container, parentComponent)
+      patchElement(n1, n2, container, parentComponent, anchor)
     }
   }
 
-  function patchElement(n1, n2, container, parentComponent) {
+  function patchElement(n1, n2, container, parentComponent, anchor) {
     console.log("patchElement n1, n2", { n1, n2 })
 
     // patch props
@@ -133,11 +144,11 @@ export function createRenderer(options: {
 
     const el = (n2.el = n1.el) // n2 may have no el since el is attached in mountElement
 
-    patchChildren(n1, n2, container, parentComponent)
+    patchChildren(n1, n2, container, parentComponent, anchor)
     patchProps(el, oldProps, newProps)
   }
 
-  function patchChildren(n1, n2, container, parentComponent) {
+  function patchChildren(n1, n2, container, parentComponent, anchor) {
     // only two children of vnode is allowed: text, array
     // n1.children is text, n2.children is array
     const prevShapeFlag = n1.shapeFlag
@@ -155,11 +166,79 @@ export function createRenderer(options: {
       // n2.children is ShapeFlags.ARRAY_CHILDREN
       if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
         hostSetElementText(container, "")
-        mountChildren(n2.children, container, parentComponent)
+        mountChildren(n2.children, container, parentComponent, anchor)
       } else {
-        // TODO array to array
+        patchKeyedChildren(
+          n1.children,
+          n2.children,
+          n2.el, // note: container is changed to n2.el
+          parentComponent,
+          anchor,
+        )
       }
     }
+  }
+
+  function patchKeyedChildren(
+    c1: any,
+    c2: any,
+    container,
+    parentComponent,
+    parentAnchor,
+  ) {
+    let i = 0
+    const l1 = c1.length
+    const l2 = c2.length
+    let e1 = l1 - 1
+    let e2 = l2 - 1
+
+    // left hand
+    while (i <= e1 && i <= e2) {
+      const n1 = c1[i]
+      const n2 = c2[i]
+      if (isSameVNodeType(n1, n2)) {
+        patch(n1, n2, container, parentComponent, parentAnchor)
+      } else {
+        break
+      }
+
+      i++
+    }
+
+    // right hand
+    while (i <= e1 && i <= e2) {
+      const n1 = c1[e1]
+      const n2 = c2[e2]
+
+      if (isSameVNodeType(n1, n2)) {
+        if (isSameVNodeType(n1, n2)) {
+          patch(n1, n2, container, parentComponent, parentAnchor)
+        } else {
+          break
+        }
+      }
+
+      e1--
+      e2--
+    }
+
+    // new children is more than new children
+    if (i > e1) {
+      if (i <= e2) {
+        const nextPos = i + 1
+        const anchor = nextPos < l2 ? c2[nextPos].el : null
+        while (i <= e2) {
+          patch(null, c2[i], container, parentComponent, anchor)
+          i++
+        }
+      }
+    }
+
+    console.log("i", i)
+  }
+
+  function isSameVNodeType(n1, n2) {
+    return n1.type === n2.type && n1.key === n2.key
   }
 
   function unmountChildren(children) {
@@ -198,6 +277,7 @@ export function createRenderer(options: {
     vnode: any,
     container: HTMLElement,
     parentComponent: HTMLElement,
+    anchor,
   ) {
     const { children, props, shapeFlag } = vnode
     // const el = (vnode.el = document.createElement(vnode.type) as HTMLElement)
@@ -206,7 +286,7 @@ export function createRenderer(options: {
     if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
       el.textContent = children
     } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-      mountChildren(children, el, parentComponent)
+      mountChildren(children, el, parentComponent, anchor)
     }
 
     for (const key in props) {
@@ -214,12 +294,19 @@ export function createRenderer(options: {
       hostPatchProp(el, key, null, val)
     }
 
-    hostInsert(el, container)
+    hostInsert(el, container, anchor)
     // container.append(el)
   }
 
-  function mountChildren(children: any, container: any, parentComponent) {
-    children.forEach((child) => patch(null, child, container, parentComponent))
+  function mountChildren(
+    children: any,
+    container: any,
+    parentComponent,
+    anchor,
+  ) {
+    children.forEach((child) =>
+      patch(null, child, container, parentComponent, anchor),
+    )
   }
 
   return {
