@@ -9,11 +9,15 @@ export function createRenderer(options: {
   createElement: (type: string) => any
   patchProp: (el: any, key: any, prevVal: any, nextVal: any) => any
   insert: (el: any, parent: any) => any
+  remove: (el: any) => any
+  setElementText: (container: any, text: any) => any
 }) {
   const {
     createElement: hostCreateElement,
     patchProp: hostPatchProp,
     insert: hostInsert,
+    remove: hostRemove,
+    setElementText: hostSetElementText,
   } = options
   function render(vnode, rootContainer) {
     // debugger
@@ -90,7 +94,7 @@ export function createRenderer(options: {
         // vnode -> element -> mountElement
         patch(null, subTree, container, instance)
 
-        // root dom node of a component is the root component of subtree
+        // root dom node of a component is the root dom of subtree
         initialVnode.el = subTree.el
 
         instance.isMounted = true
@@ -116,11 +120,11 @@ export function createRenderer(options: {
     if (!n1) {
       mountElement(n2, container, parentComponent)
     } else {
-      patchElement(n1, n2, container)
+      patchElement(n1, n2, container, parentComponent)
     }
   }
 
-  function patchElement(n1, n2, container) {
+  function patchElement(n1, n2, container, parentComponent) {
     console.log("patchElement n1, n2", { n1, n2 })
 
     // patch props
@@ -129,7 +133,40 @@ export function createRenderer(options: {
 
     const el = (n2.el = n1.el) // n2 may have no el since el is attached in mountElement
 
+    patchChildren(n1, n2, container, parentComponent)
     patchProps(el, oldProps, newProps)
+  }
+
+  function patchChildren(n1, n2, container, parentComponent) {
+    // only two children of vnode is allowed: text, array
+    // n1.children is text, n2.children is array
+    const prevShapeFlag = n1.shapeFlag
+    const { shapeFlag } = n2
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      // n2.children is ShapeFlags.TEXT_CHILDREN
+      if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        unmountChildren(container)
+      }
+
+      if (n1.children !== n2.children) {
+        hostSetElementText(container, n2.children)
+      }
+    } else {
+      // n2.children is ShapeFlags.ARRAY_CHILDREN
+      if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+        hostSetElementText(container, "")
+        mountChildren(n2.children, container, parentComponent)
+      } else {
+        // TODO array to array
+      }
+    }
+  }
+
+  function unmountChildren(children) {
+    for (let i = 0; i < children.length - 1; i++) {
+      const el = children[i].el
+      hostRemove(el)
+    }
   }
 
   function patchProps(el, oldProps, newProps) {
