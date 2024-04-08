@@ -225,13 +225,23 @@ export function createRenderer(options: {
     // new children is more than new children
     if (i > e1) {
       if (i <= e2) {
-        const nextPos = i + 1
+        const nextPos = e2 + 1 // bug fixed
         const anchor = nextPos < l2 ? c2[nextPos].el : null
         while (i <= e2) {
           patch(null, c2[i], container, parentComponent, anchor)
           i++
         }
       }
+    }
+    // new children is fewer than old children
+    else if (i > e2) {
+      while (i <= e1) {
+        hostRemove(c1[i].el)
+        i++
+      }
+    }
+    // the diff between 2 children is chaotic: we need to delete old / add new / move existing ones
+    else {
     }
 
     console.log("i", i)
