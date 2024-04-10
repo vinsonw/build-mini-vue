@@ -211,11 +211,9 @@ export function createRenderer(options: {
       const n2 = c2[e2]
 
       if (isSameVNodeType(n1, n2)) {
-        if (isSameVNodeType(n1, n2)) {
-          patch(n1, n2, container, parentComponent, parentAnchor)
-        } else {
-          break
-        }
+        patch(n1, n2, container, parentComponent, parentAnchor)
+      } else {
+        break
       }
 
       e1--
@@ -239,9 +237,49 @@ export function createRenderer(options: {
         hostRemove(c1[i].el)
         i++
       }
-    }
-    // the diff between 2 children is chaotic: we need to delete old / add new / move existing ones
-    else {
+    } else {
+      // handle diff in the middle:  delete old / add new / move existing ones
+      let s1 = i // 's' for 'start'
+      let s2 = i // 's' for 'start'
+
+      const toBePatched = e2 - s2 + 1
+      let patched = 0
+
+      const keyToNewIndexMap = new Map()
+      for (let i = s2; i <= e2; i++) {
+        const nextChild = c2[i]
+        keyToNewIndexMap.set(nextChild.key, i)
+      }
+
+      for (let i = s1; i <= e1; i++) {
+        const prevChild = c1[i]
+
+        // remove old child that has no counterpart in new children
+        if (patched >= toBePatched) {
+          hostRemove(prevChild.el)
+          continue
+        }
+
+        // key is undefined or null
+        let newIndex
+        if (prevChild.key != null) {
+          newIndex = keyToNewIndexMap.get(prevChild.key)
+        } else {
+          for (let j = s2; j < e2; j++) {
+            if (isSameVNodeType(prevChild, c2[j])) {
+              newIndex = j
+              break
+            }
+          }
+        }
+
+        if (newIndex === undefined) {
+          hostRemove(prevChild.el)
+        } else {
+          patch(prevChild, c2[newIndex], container, parentComponent, null)
+          patched++
+        }
+      }
     }
 
     console.log("i", i)
