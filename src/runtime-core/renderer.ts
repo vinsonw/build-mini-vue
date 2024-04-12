@@ -110,7 +110,7 @@ export function createRenderer(options: {
         instance.isMounted = true
       } else {
         // update
-        console.log("update")
+        console.log("update when responsive data is changed")
         const { proxy } = instance
         const prevSubtree = instance.subTree
         const subTree = instance.render.call(proxy)
@@ -192,7 +192,8 @@ export function createRenderer(options: {
     let e1 = l1 - 1
     let e2 = l2 - 1
 
-    // left hand
+    // Part 1: narrow the diff range by get same-type vnode out of picture
+    // go from left hand
     while (i <= e1 && i <= e2) {
       const n1 = c1[i]
       const n2 = c2[i]
@@ -205,7 +206,7 @@ export function createRenderer(options: {
       i++
     }
 
-    // right hand
+    // go from right hand
     while (i <= e1 && i <= e2) {
       const n1 = c1[e1]
       const n2 = c2[e2]
@@ -220,7 +221,7 @@ export function createRenderer(options: {
       e2--
     }
 
-    // new children is more than new children
+    // Part 2. handle diff at left or right end: new children is more than new children
     if (i > e1) {
       if (i <= e2) {
         const nextPos = e2 + 1 // bug fixed
@@ -231,26 +232,37 @@ export function createRenderer(options: {
         }
       }
     }
-    // new children is fewer than old children
+    // Part 3. also handle diff at left or right end: new children is fewer than old children
     else if (i > e2) {
       while (i <= e1) {
         hostRemove(c1[i].el)
         i++
       }
     } else {
-      // handle diff in the middle:  delete old / add new / move existing ones
-      let s1 = i // 's' for 'start'
-      let s2 = i // 's' for 'start'
+      // Part 4. handle diff in the middle:  move existing  / remove old / add new dom nodes
+
+      // 's' for 'start', s1 and s2 are the starting index of difference range in the middle
+      let s1 = i
+      let s2 = i
 
       const toBePatched = e2 - s2 + 1
       let patched = 0
-
       const keyToNewIndexMap = new Map()
+
+      // init newIndexToOldIndexMap, which maps its own index to old index(its value)
+      const newIndexToOldIndexMap = new Array(toBePatched)
+      for (let i = 0; i < toBePatched; i++) newIndexToOldIndexMap[i] = 0
+      // `move` represents if there is ANY new child that is just old child that moved position
+      let moved = false
+      let maxNewIndexSoFar = 0
+
+      // iterate over new children to construct keyToNewIndexMap
       for (let i = s2; i <= e2; i++) {
         const nextChild = c2[i]
         keyToNewIndexMap.set(nextChild.key, i)
       }
 
+      // iterate over old children to patch
       for (let i = s1; i <= e1; i++) {
         const prevChild = c1[i]
 
@@ -274,15 +286,102 @@ export function createRenderer(options: {
         }
 
         if (newIndex === undefined) {
+          // #################
+          // ### REMOVE OLD DOM
+          // #################
+          console.log("update: remove dom")
           hostRemove(prevChild.el)
         } else {
+          if (newIndex > maxNewIndexSoFar) {
+            maxNewIndexSoFar = newIndex
+          } else {
+            moved = true
+          }
+
+          newIndexToOldIndexMap[newIndex - s2] = i + 1
           patch(prevChild, c2[newIndex], container, parentComponent, null)
           patched++
         }
       }
-    }
 
-    console.log("i", i)
+      // get indices of new children that don't need moving
+      const increasingNewIndexSequence = moved
+        ? getSequence(newIndexToOldIndexMap)
+        : []
+      let j = increasingNewIndexSequence.length - 1
+
+      // iterate over new children that need patching
+      // (backward so that we could use insert more easily)
+      for (let i = toBePatched - 1; i > -1; i--) {
+        const nextIndex = i + s2
+        const nextChild = c2[nextIndex]
+        const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : null
+
+        // if the corresponding old index does not exist (equals to initial value 0)
+        // then just create new dom node using patch()
+        if (newIndexToOldIndexMap[i] === 0) {
+          // #################
+          // ### ADD NEW DOM
+          // #################
+          console.log("update: add dom")
+          patch(null, nextChild, container, parentAnchor, anchor)
+        }
+        // otherwise go into move logic
+        else if (moved) {
+          // if new child's index is not in increasingNewIndexSequence, it needs to move
+          if (i !== increasingNewIndexSequence[j]) {
+            // #################
+            // ### MOVE EXISTING DOM
+            // #################
+            console.log("update: moving dom")
+            hostInsert(nextChild.el, container, anchor)
+          } else {
+            j--
+          }
+        }
+      }
+    }
+  }
+
+  function getSequence(arr) {
+    const p = arr.slice()
+    const result = [0]
+    let i, j, u, v, c
+    const len = arr.length
+    for (i = 0; i < len; i++) {
+      const arrI = arr[i]
+      if (arrI !== 0) {
+        j = result[result.length - 1]
+        if (arr[j] < arrI) {
+          p[i] = j
+          result.push(i)
+          continue
+        }
+        u = 0
+        v = result.length - 1
+        while (u < v) {
+          c = (u + v) >> 1
+          if (arr[result[c]] < arrI) {
+            u = c + 1
+          } else {
+            v = c
+          }
+        }
+        if (arrI < arr[result[u]]) {
+          if (u > 0) {
+            p[i] = result[u - 1]
+          }
+          result[u] = i
+        }
+      }
+    }
+    u = result.length
+    v = result[u - 1]
+    while (u-- > 0) {
+      result[u] = v
+      v = p[v]
+    }
+    return result
   }
 
   function isSameVNodeType(n1, n2) {
