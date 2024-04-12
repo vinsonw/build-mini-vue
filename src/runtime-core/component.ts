@@ -9,6 +9,7 @@ export function createComponentInstance(vnode, parent) {
   const instance = {
     type: vnode.type,
     vnode,
+    next: null, // new vnode used in update
     setupState: {},
     props: {},
     slots: {},

@@ -5,6 +5,7 @@ import { createAppAPI } from "./createApp"
 import { effect } from "src/reactivity/effect"
 import { EMPTY_OBJ } from "src/shared"
 import { getSequence } from "./algo"
+import { shouldUpdateComponent } from "./componentUpdateUtils"
 
 export function createRenderer(options: {
   createElement: (type: string) => any
@@ -72,7 +73,12 @@ export function createRenderer(options: {
     parentComponent: HTMLElement,
     anchor,
   ) {
-    mountComponent(n2, container, parentComponent, anchor)
+    if (!n1) {
+      mountComponent(n2, container, parentComponent, anchor)
+    } else {
+      console.log("update component")
+      updateComponent(n1, n2, container, parentComponent, anchor)
+    }
   }
 
   function mountComponent(
@@ -81,9 +87,29 @@ export function createRenderer(options: {
     parentComponent: HTMLElement,
     anchor,
   ) {
-    const instance = createComponentInstance(initialVnode, parentComponent)
+    const instance = (initialVnode.component = createComponentInstance(
+      initialVnode,
+      parentComponent,
+    ))
     setupComponent(instance)
     setupRenderEffect(instance, initialVnode, container, anchor)
+  }
+
+  function updateComponent(n1, n2, container, parentComponent, anchor) {
+    const instance = (n2.component = n1.component)
+    // shouldUpdateComponent real means hasPropsOfComponentChanged
+    if (shouldUpdateComponent(n1, n2)) {
+      instance.next = n2
+      instance.update()
+    } else {
+      // in summary, during update of a component:
+      // 1. el reference is copied to new vnode
+      // 2. that new vnode is updated to instance.vnode
+      // 3. if props is changed, new props object is
+      //    updated to instance.props from nextVNode.props (not here, in updateComponentPreRender())
+      n2.el = n1.el
+      instance.vnode = n2
+    }
   }
 
   function setupRenderEffect(
@@ -92,7 +118,8 @@ export function createRenderer(options: {
     container: HTMLElement,
     anchor,
   ) {
-    effect(() => {
+    // save the 'runner' on instance.update
+    instance.update = effect(() => {
       if (!instance.isMounted) {
         const { proxy } = instance
         // so-called subTree is just root vnode of a component
@@ -112,6 +139,14 @@ export function createRenderer(options: {
       } else {
         // update
         console.log("update when responsive data is changed")
+
+        // before run render() again
+        const { next, vnode } = instance
+        if (next) {
+          next.el = vnode.el
+          updateComponentPreRender(instance, next)
+        }
+
         const { proxy } = instance
         const prevSubtree = instance.subTree
         const subTree = instance.render.call(proxy)
@@ -119,6 +154,12 @@ export function createRenderer(options: {
         patch(prevSubtree, subTree, container, instance, anchor)
       }
     })
+  }
+
+  function updateComponentPreRender(instance, nextVNode) {
+    instance.vnode = nextVNode
+    instance.next = null
+    instance.props = nextVNode.props
   }
 
   function processElement(
@@ -145,7 +186,8 @@ export function createRenderer(options: {
 
     const el = (n2.el = n1.el) // n2 may have no el since el is attached in mountElement
 
-    patchChildren(n1, n2, container, parentComponent, anchor)
+    // note: container is changed to n2.el
+    patchChildren(n1, n2, el, parentComponent, anchor)
     patchProps(el, oldProps, newProps)
   }
 
@@ -157,7 +199,7 @@ export function createRenderer(options: {
     if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
       // n2.children is ShapeFlags.TEXT_CHILDREN
       if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-        unmountChildren(container)
+        unmountChildren(n1.children)
       }
 
       if (n1.children !== n2.children) {
@@ -172,7 +214,7 @@ export function createRenderer(options: {
         patchKeyedChildren(
           n1.children,
           n2.children,
-          n2.el, // note: container is changed to n2.el
+          container,
           parentComponent,
           anchor,
         )

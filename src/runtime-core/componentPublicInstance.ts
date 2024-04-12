@@ -4,6 +4,7 @@ const publicPropertiesMap = {
   // support this.$el in options api
   $el: (instance) => instance.vnode.el,
   $slots: (instance) => instance.slots,
+  $props: (instance) => instance.props,
 }
 
 export const PublicInstanceProxyHandlers = {
