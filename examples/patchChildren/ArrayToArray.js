@@ -199,26 +199,42 @@ import { ref, h } from "../../lib/mini-vue.esm.js"
 // a,b,(c,d,e,z),f,g
 // a,b,(d,c,y,e),f,g
 
+// const prevChildren = [
+//   h("p", { key: "A" }, "A"),
+//   h("p", { key: "B" }, "B"),
+//   h("p", { key: "C" }, "C"), // one of increasing sequence                    <<<start
+//   h("p", { key: "D" }, "D"), // move from (step 3)
+//   h("p", { key: "E" }, "E"), // one of increasing sequence
+//   h("p", { key: "Z" }, "Z"), // remove (step 1)                               <<<end
+//   h("p", { key: "F" }, "F"),
+//   h("p", { key: "G" }, "G"),
+// ]
+
+// const nextChildren = [
+//   h("p", { key: "A" }, "A"),
+//   h("p", { key: "B" }, "B"),
+//   h("p", { key: "D" }, "D"), // move to (step 3)                              <<<start
+//   h("p", { key: "C" }, "C"), // one of increasing sequence
+//   h("p", { key: "Y" }, "Y"), // add (step 2)
+//   h("p", { key: "E" }, "E"), // one of increasing sequence                    <<<end
+//   h("p", { key: "F" }, "F"),
+//   h("p", { key: "G" }, "G"),
+// ]
+
+// fix
+
 const prevChildren = [
   h("p", { key: "A" }, "A"),
+  h("p", {}, "C"),
   h("p", { key: "B" }, "B"),
-  h("p", { key: "C" }, "C"), // one of increasing sequence                    <<<start
-  h("p", { key: "D" }, "D"), // move from (step 3)
-  h("p", { key: "E" }, "E"), // one of increasing sequence
-  h("p", { key: "Z" }, "Z"), // remove (step 1)                               <<<end
-  h("p", { key: "F" }, "F"),
-  h("p", { key: "G" }, "G"),
+  h("p", { key: "D" }, "D"),
 ]
 
 const nextChildren = [
   h("p", { key: "A" }, "A"),
   h("p", { key: "B" }, "B"),
-  h("p", { key: "D" }, "D"), // move to (step 3)                              <<<start
-  h("p", { key: "C" }, "C"), // one of increasing sequence
-  h("p", { key: "Y" }, "Y"), // add (step 2)
-  h("p", { key: "E" }, "E"), // one of increasing sequence                    <<<end
-  h("p", { key: "F" }, "F"),
-  h("p", { key: "G" }, "G"),
+  h("p", {}, "C"),
+  h("p", { key: "D" }, "D"),
 ]
 
 export default {
