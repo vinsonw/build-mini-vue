@@ -12,11 +12,13 @@ export default {
         count.value = i
       }
 
-      debugger
-      console.log(instance)
       nextTick(() => {
-        console.log(instance)
+        debugger
+        console.log("inside nextTick instance", instance)
       })
+
+      debugger
+      console.log("outside nextTick instance", instance)
 
       // await nextTick()
       // console.log(instance)

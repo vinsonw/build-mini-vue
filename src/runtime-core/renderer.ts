@@ -6,6 +6,7 @@ import { effect } from "src/reactivity/effect"
 import { EMPTY_OBJ } from "src/shared"
 import { getSequence } from "./algo"
 import { shouldUpdateComponent } from "./componentUpdateUtils"
+import { queueJobs } from "./scheduler"
 
 export function createRenderer(options: {
   createElement: (type: string) => any
@@ -119,41 +120,49 @@ export function createRenderer(options: {
     anchor,
   ) {
     // save the 'runner' on instance.update
-    instance.update = effect(() => {
-      if (!instance.isMounted) {
-        const { proxy } = instance
-        // so-called subTree is just root vnode of a component
-        const subTree = (instance.subTree = instance.render.call(proxy))
+    instance.update = effect(
+      () => {
+        if (!instance.isMounted) {
+          const { proxy } = instance
+          // so-called subTree is just root vnode of a component
+          const subTree = (instance.subTree = instance.render.call(proxy))
 
-        // console.log("subTree", JSON.stringify(subTree))
-        console.log("subTree", subTree)
+          // console.log("subTree", JSON.stringify(subTree))
+          console.log("subTree", subTree)
 
-        // vnode -> patch
-        // vnode -> element -> mountElement
-        patch(null, subTree, container, instance, anchor)
+          // vnode -> patch
+          // vnode -> element -> mountElement
+          patch(null, subTree, container, instance, anchor)
 
-        // root dom node of a component is the root dom of subtree
-        initialVnode.el = subTree.el
+          // root dom node of a component is the root dom of subtree
+          initialVnode.el = subTree.el
 
-        instance.isMounted = true
-      } else {
-        // update
-        console.log("update when responsive data is changed")
+          instance.isMounted = true
+        } else {
+          // update
+          console.log("update when responsive data is changed")
 
-        // before run render() again
-        const { next, vnode } = instance
-        if (next) {
-          next.el = vnode.el
-          updateComponentPreRender(instance, next)
+          // before run render() again
+          const { next, vnode } = instance
+          if (next) {
+            next.el = vnode.el
+            updateComponentPreRender(instance, next)
+          }
+
+          const { proxy } = instance
+          const prevSubtree = instance.subTree
+          const subTree = instance.render.call(proxy)
+          instance.subTree = subTree
+          patch(prevSubtree, subTree, container, instance, anchor)
         }
-
-        const { proxy } = instance
-        const prevSubtree = instance.subTree
-        const subTree = instance.render.call(proxy)
-        instance.subTree = subTree
-        patch(prevSubtree, subTree, container, instance, anchor)
-      }
-    })
+      },
+      {
+        scheduler: () => {
+          // console.log("update - scheduler")
+          queueJobs(instance.update)
+        },
+      },
+    )
   }
 
   function updateComponentPreRender(instance, nextVNode) {
